@@ -1,2 +1,2 @@
 opencv-contrib-python-headless==4.10.0.84
-signa-core>=0.2.1
+# signa-core is bundled in the release ZIP (signa/vendor/signa_core).

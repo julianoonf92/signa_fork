@@ -258,7 +258,7 @@ def main():
     ap.add_argument("--images", required=True, help="image directory or glob")
     ap.add_argument("--coords", required=True, help="GCP coordinate file (id easting northing elevation)")
     ap.add_argument("--epsg", type=int, default=28191)
-    ap.add_argument("--dict", dest="dict_id", type=int, default=1, help="ArUco dict (1=4x4_100, 99=custom 3x3)")
+    ap.add_argument("--dict", dest="dict_id", type=int, default=100, help="ArUco dict (100=Signa six-marker 3x3, IDs 0-5; 1=4x4_100; 99=legacy 3x3)")
     ap.add_argument("--minrate", type=float, default=0.01)
     ap.add_argument("--ignore", type=float, default=0.33)
     ap.add_argument("--no-adjust", dest="adjust", action="store_false", default=True)

@@ -48,11 +48,11 @@ def validate_params(data):
         return None, 'EPSG code out of range (1024-999999).'
 
     try:
-        dict_id = int(data.get('dict', 1))
+        dict_id = int(data.get('dict', 100))
     except (TypeError, ValueError):
         return None, 'Invalid ArUco dictionary id.'
     if dict_id not in VALID_DICTS:
-        return None, 'Unsupported ArUco dictionary id (use 0-20 or 99).'
+        return None, 'Unsupported ArUco dictionary id (use 0-20, 99 or 100).'
 
     try:
         minrate = float(data.get('minrate', 0.01))
@@ -81,11 +81,11 @@ def validate_marker_params(data):
     from signa_core import (
         VALID_DICTS, DICT_CAPACITY, MARKER_AIDS, MAX_MARKER_PAGES, PAGE_SIZES_MM)
     try:
-        dict_id = int(data.get('dict', 1))
+        dict_id = int(data.get('dict', 100))
     except (TypeError, ValueError):
         return None, 'Invalid ArUco dictionary id.'
     if dict_id not in VALID_DICTS:
-        return None, 'Unsupported ArUco dictionary id (use 0-20 or 99).'
+        return None, 'Unsupported ArUco dictionary id (use 0-20, 99 or 100).'
 
     try:
         id_from = int(data.get('id_from', 0))
@@ -101,12 +101,19 @@ def validate_marker_params(data):
 
     page = str(data.get('page', 'a4')).lower()
     if page not in PAGE_SIZES_MM:
-        return None, 'Unsupported page size (use A2-A6).'
+        return None, 'Unsupported page size (use A0-A6).'
 
     aid = str(data.get('aid', 'cross')).lower()
     if aid not in MARKER_AIDS:
         return None, 'Unsupported center aiming aid.'
 
+    tiled = str(data.get('tile_a4', 'false')).lower() in ('1', 'true', 'on', 'yes')
+    if tiled:
+        from signa_core.markers import tile_layout
+        cols, rows = tile_layout(page)
+        if cols * rows * (id_to - id_from + 1) > 200:
+            return None, 'Tiled PDF too large (max 200 A4 pages).'
+
     gray = str(data.get('gray', 'false')).lower() in ('1', 'true', 'on', 'yes')
     return {'dict_id': dict_id, 'id_from': id_from, 'id_to': id_to,
-            'page': page, 'gray': gray, 'aid': aid}, None
+            'page': page, 'gray': gray, 'aid': aid, 'tile_a4': tiled}, None

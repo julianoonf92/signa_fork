@@ -144,7 +144,7 @@ class Plugin(PluginBase):
 
             filename = 'aruco-markers-dict{}-id{}-{}-{}{}-{}.pdf'.format(
                 params['dict_id'], params['id_from'], params['id_to'],
-                params['page'], '-gray' if params['gray'] else '', params['aid'])
+                params['page'] + ('-tiled-a4' if params['tile_a4'] else ''), '-gray' if params['gray'] else '', params['aid'])
             response = HttpResponse(pdf, content_type='application/pdf')
             response['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)
             return response

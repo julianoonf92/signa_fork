@@ -34,7 +34,7 @@ def _last_key(task_id):
 
 # Per-user detection defaults (settable on the Signa Settings page). Stored in
 # the same per-user datastore as the run bindings (distinct "default_*" keys).
-DEFAULTS = {'epsg': 28191, 'dict': 1, 'minrate': 0.01, 'ignore': 0.33, 'adjust': True}
+DEFAULTS = {'epsg': 28191, 'dict': 100, 'minrate': 0.01, 'ignore': 0.33, 'adjust': True}
 
 
 def read_user_defaults(store):

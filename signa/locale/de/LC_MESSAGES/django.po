@@ -370,3 +370,18 @@ msgstr "Bitte eine Task-ID eingeben."
 
 msgid "Loading…"
 msgstr "Lädt…"
+
+msgid "Split onto A4 sheets"
+msgstr "Auf A4-Blätter aufteilen"
+
+msgid "Keeps the selected size. Print at 100%, trim at the crop marks, and overlap matching rows and columns by 5 mm. Includes 10 mm printer margins."
+msgstr "Behält die gewählte Größe bei. Mit 100 % drucken, an den Schnittmarken zuschneiden und passende Zeilen und Spalten um 5 mm überlappen. Mit 10 mm Druckerrand."
+
+msgid "Unsupported ArUco dictionary id (use 0-20, 99 or 100)."
+msgstr "Nicht unterstützte ArUco-Wörterbuch-ID (0–20, 99 oder 100 verwenden)."
+
+msgid "Unsupported page size (use A0-A6)."
+msgstr "Nicht unterstütztes Papierformat (A0–A6 verwenden)."
+
+msgid "Tiled PDF too large (max 200 A4 pages)."
+msgstr "Gekacheltes PDF zu groß (maximal 200 A4-Seiten)."

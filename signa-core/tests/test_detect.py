@@ -42,3 +42,15 @@ def test_unreadable_image_is_none(tmp_path):
     bad.write_bytes(b"not an image")
     result = detect_markers([str(bad)], dict_id=1)
     assert result["nope.png"] is None
+
+
+def test_six_marker_codes_have_rotational_hamming_distance_three():
+    dictionary = make_dictionary(100, aruco)
+    import itertools
+    words = []
+    for marker_id in range(6):
+        marker = aruco.generateImageMarker(dictionary, marker_id, 50)
+        bits = marker[15:36:10, 15:36:10] > 0
+        for rotation in range(4):
+            words.append(np.rot90(bits, rotation).copy())
+    assert min(np.count_nonzero(a != b) for a, b in itertools.combinations(words, 2)) == 3

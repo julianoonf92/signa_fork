@@ -30,7 +30,7 @@ def corner_center(corner_set):
     )
 
 
-def detect_markers(image_paths, *, dict_id=1, minrate=0.01, ignore=0.33, adjust=True):
+def detect_markers(image_paths, *, dict_id=100, minrate=0.01, ignore=0.33, adjust=True):
     """Detect ArUco markers across one or more images.
 
     Parameters mirror the Signa detector: ``dict_id`` selects the ArUco

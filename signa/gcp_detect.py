@@ -13,7 +13,7 @@ This module intentionally contains nothing but detect_gcps for that reason.
 """
 
 
-def detect_gcps(image_paths, coords_text, epsg, dict_id=1, minrate=0.01,
+def detect_gcps(image_paths, coords_text, epsg, dict_id=100, minrate=0.01,
                 ignore=0.33, adjust=True, task_name=None):
     """Detect ArUco GCPs and build an ODM-compatible gcp_list.txt.
 
@@ -120,6 +120,24 @@ def detect_gcps(image_paths, coords_text, epsg, dict_id=1, minrate=0.01,
 
     def make_dictionary(dictionary_id):
         dictionary_id = int(dictionary_id)
+        if dictionary_id == 100:
+            # Frozen Signa six-marker 3x3 dictionary (IDs 0..5). Never regenerate:
+            # these bytes define the identity of physical markers already printed.
+            import numpy as np
+            codes = np.array([
+                [[50, 1, 161, 1], [166, 0, 194, 1]],
+                [[204, 0, 90, 0], [25, 1, 45, 0]],
+                [[144, 0, 3, 0], [4, 1, 96, 0]],
+                [[243, 0, 151, 1], [103, 1, 244, 1]],
+                [[189, 1, 239, 0], [222, 1, 123, 1]],
+                [[124, 0, 217, 0], [31, 0, 77, 1]],
+            ], dtype=np.uint8)
+            if hasattr(aruco, 'Dictionary'):
+                return aruco.Dictionary(codes, 3, 1)
+            result = aruco.Dictionary_create(6, 3)
+            result.bytesList = codes
+            result.maxCorrectionBits = 1
+            return result
         if dictionary_id == 99:
             if hasattr(aruco, 'extendDictionary'):
                 return aruco.extendDictionary(32, 3)

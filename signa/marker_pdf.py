@@ -78,7 +78,7 @@ def _render_page(cv2, aruco, adict, marker_id, page_key, gray, aid, dict_id):
                            meta=meta, big=str(marker_id))
 
 
-def build_marker_pdf(dict_id, id_from, id_to, page='a4', gray=False, aid='cross'):
+def build_marker_pdf(dict_id, id_from, id_to, page='a4', gray=False, aid='cross', tile_a4=False):
     """Build the marker-sheet PDF.
 
     :returns: ``(pdf_bytes, None)`` on success, ``(None, error_message)`` on
@@ -92,12 +92,21 @@ def build_marker_pdf(dict_id, id_from, id_to, page='a4', gray=False, aid='cross'
     if id_to >= _m.marker_capacity(adict):
         return None, _ERR_CAPACITY
 
+    if tile_a4:
+        cols, rows = _m.tile_layout(page)
+        if cols * rows * (id_to - id_from + 1) > 200:
+            return None, 'Tiled PDF too large (max 200 A4 pages).'
     pages = []
     for marker_id in range(id_from, id_to + 1):
         rendered = _render_page(cv2, aruco, adict, marker_id, page, gray, aid, dict_id)
         if not _m.is_detectable(cv2, aruco, adict, rendered, marker_id):
             return None, _ERR_SELF_CHECK
         # Compress immediately and drop the array — an A2 page is ~100 MB raw.
-        pages.append(_m.compress_page(cv2, rendered))
+        if tile_a4:
+            for tile in _m.a4_tiles(cv2, rendered, page, marker_id):
+                pages.append(_m.compress_page(cv2, tile))
+        else:
+            pages.append(_m.compress_page(cv2, rendered))
+        del rendered
 
-    return _m.pages_to_pdf(pages, _m.PAGE_SIZES_MM[page]), None
+    return _m.pages_to_pdf(pages, _m.PAGE_SIZES_MM['a4' if tile_a4 else page]), None

@@ -13,6 +13,7 @@ handles both the legacy free-function form and the newer object-oriented form.
 # Single source of truth for the offered ArUco dictionaries, as (value, label)
 # pairs. Ids 0..20 are OpenCV's predefined dictionaries; 99 is a legacy custom
 # 3x3 dictionary built with extendDictionary for existing Signa marker sheets.
+# 100 is Signa's frozen six-marker 3x3 dictionary.
 DICT_CHOICES = [
     ("0", "0 — DICT_4X4_50"),
     ("1", "1 — DICT_4X4_100"),
@@ -36,6 +37,7 @@ DICT_CHOICES = [
     ("19", "19 — DICT_APRILTAG_36h10"),
     ("20", "20 — DICT_APRILTAG_36h11"),
     ("99", "99 — legacy custom 3×3"),
+    ("100", "100 — Signa 3×3 (6 markers, IDs 0–5)"),
 ]
 
 VALID_DICTS = {int(value) for value, _label in DICT_CHOICES}
@@ -58,6 +60,24 @@ def make_dictionary(dict_id, aruco=None):
     if aruco is None:
         _, aruco = load_aruco()
     dict_id = int(dict_id)
+    if dict_id == 100:
+        # Frozen Signa six-marker 3x3 dictionary (IDs 0..5). Never regenerate:
+        # these bytes define the identity of physical markers already printed.
+        import numpy as np
+        codes = np.array([
+            [[50, 1, 161, 1], [166, 0, 194, 1]],
+            [[204, 0, 90, 0], [25, 1, 45, 0]],
+            [[144, 0, 3, 0], [4, 1, 96, 0]],
+            [[243, 0, 151, 1], [103, 1, 244, 1]],
+            [[189, 1, 239, 0], [222, 1, 123, 1]],
+            [[124, 0, 217, 0], [31, 0, 77, 1]],
+        ], dtype=np.uint8)
+        if hasattr(aruco, 'Dictionary'):
+            return aruco.Dictionary(codes, 3, 1)
+        result = aruco.Dictionary_create(6, 3)
+        result.bytesList = codes
+        result.maxCorrectionBits = 1
+        return result
     if dict_id == 99:
         if hasattr(aruco, "extendDictionary"):
             return aruco.extendDictionary(32, 3)

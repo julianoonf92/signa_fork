@@ -20,7 +20,7 @@
     // read inside the button callback, which runs later at trigger time.
 
     // ArUco dictionaries offered in the dialog — a mirror of signa/params.py
-    // DICT_CHOICES (ids 0..20 = OpenCV predefined, 99 = legacy custom 3x3).
+    // DICT_CHOICES (ids 0..20 = OpenCV predefined, 99 = legacy custom 3x3, 100 = Signa six-marker 3x3).
     // This page is a static script (no Django rendering), so the list is
     // duplicated here; keep it in sync with params.py if that ever changes.
     var DICT_CHOICES = [
@@ -32,7 +32,8 @@
         ["15", "15 — DICT_7X7_1000"], ["16", "16 — DICT_ARUCO_ORIGINAL"],
         ["17", "17 — DICT_APRILTAG_16h5"], ["18", "18 — DICT_APRILTAG_25h9"],
         ["19", "19 — DICT_APRILTAG_36h10"], ["20", "20 — DICT_APRILTAG_36h11"],
-        ["99", "99 — legacy custom 3×3"]
+        ["99", "99 — legacy custom 3×3"],
+        ["100", "100 — Signa 3×3 (6 markers, IDs 0–5)"]
     ];
     function dictOptions(selected) {
         return DICT_CHOICES.map(function (d) {
@@ -159,7 +160,7 @@
                     '<div class="col-sm-6 form-group"><label>' + tr("EPSG (target CRS)") + '</label>' +
                       '<input type="number" class="form-control" data-epsg value="28191"></div>' +
                     '<div class="col-sm-6 form-group"><label>' + tr("ArUco dictionary") + '</label>' +
-                      '<select class="form-control" data-dict>' + dictOptions("1") + '</select></div>' +
+                      '<select class="form-control" data-dict>' + dictOptions("100") + '</select></div>' +
                   '</div>' +
                   '<div class="row">' +
                     '<div class="col-sm-6 form-group"><label>minrate</label>' +

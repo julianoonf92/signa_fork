@@ -33,13 +33,13 @@ def test_all_opencv_dicts_and_custom_accepted():
 def test_dict_choices_match_valid_dicts():
     # the UI list and the accepted-id set are derived from the same source
     assert {int(v) for v, _ in _params.DICT_CHOICES} == _params.VALID_DICTS
-    assert _params.VALID_DICTS == set(range(0, 21)) | {99}
+    assert _params.VALID_DICTS == set(range(0, 21)) | {99, 100}
 
 
 def test_valid_defaults():
     params, err = validate_params({"epsg": "28191"})
     assert err is None
-    assert params == {"epsg": 28191, "dict_id": 1, "minrate": 0.01,
+    assert params == {"epsg": 28191, "dict_id": 100, "minrate": 0.01,
                       "ignore": 0.33, "adjust": True}
 
 
@@ -133,8 +133,8 @@ validate_marker_params = _params.validate_marker_params
 def test_marker_defaults():
     params, err = validate_marker_params({})
     assert err is None
-    assert params == {"dict_id": 1, "id_from": 0, "id_to": 0,
-                      "page": "a4", "gray": False, "aid": "cross"}
+    assert params == {"dict_id": 100, "id_from": 0, "id_to": 0,
+                      "page": "a4", "gray": False, "aid": "cross", "tile_a4": False}
 
 
 def test_marker_all_fields():
@@ -143,7 +143,7 @@ def test_marker_all_fields():
         "page": "A3", "gray": "on", "aid": "dot_ring"})
     assert err is None
     assert params == {"dict_id": 99, "id_from": 5, "id_to": 16,
-                      "page": "a3", "gray": True, "aid": "dot_ring"}
+                      "page": "a3", "gray": True, "aid": "dot_ring", "tile_a4": False}
 
 
 def test_marker_bad_dict():
@@ -187,3 +187,14 @@ def test_marker_bad_page():
 def test_marker_bad_aid():
     params, err = validate_marker_params({"aid": "bullseye"})
     assert params is None and "aiming aid" in err
+
+
+def test_six_marker_capacity_and_new_paper_sizes():
+    for page in ('a0', 'a1', 'a3'):
+        params, err = validate_marker_params({'page': page, 'id_to': '5', 'tile_a4': 'on'})
+        assert err is None
+        assert params['dict_id'] == 100 and params['tile_a4'] is True
+    params, err = validate_marker_params({'id_to': '6'})
+    assert params is None and 'capacity' in err
+    params, err = validate_marker_params({'dict': '1', 'id_to': '9', 'page': 'a0', 'tile_a4': 'on'})
+    assert params is None and '200 A4 pages' in err

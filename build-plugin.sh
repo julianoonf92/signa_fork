@@ -51,7 +51,13 @@ mkdir -p "$DIST_DIR"
 rm -f "$DIST_DIR"/signa-*.zip
 
 log "Packaging signa v$VERSION → dist/$ZIP_NAME"
-( cd "$SCRIPT_DIR" && zip -r -q "$ZIP_PATH" signa \
+STAGING="$(mktemp -d)"
+trap 'rm -rf "$STAGING"' EXIT
+cp -R "$PLUGIN_DIR" "$STAGING/signa"
+mkdir -p "$STAGING/signa/vendor"
+cp -R "$SCRIPT_DIR/signa-core/signa_core" "$STAGING/signa/vendor/signa_core"
+cp "$SCRIPT_DIR/signa-core/LICENSE" "$STAGING/signa/vendor/signa_core/LICENSE"
+( cd "$STAGING" && zip -r -q "$ZIP_PATH" signa \
     -x '*.pyc' '*/__pycache__/*' '*/.DS_Store' '*.swp' )
 
 # ---------- Verify the archive has a single root dir ----------

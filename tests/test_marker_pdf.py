@@ -112,3 +112,70 @@ def test_error_strings_are_catalog_msgids():
                                   "LC_MESSAGES", "django.po"))
     for s in (mp._ERR_NO_CV2, mp._ERR_CAPACITY, mp._ERR_SELF_CHECK):
         assert s in po, "marker_pdf error not in de catalog: {!r}".format(s)
+
+
+@pytest.mark.parametrize('gray', [False, True])
+@pytest.mark.parametrize('marker_id', range(6))
+@pytest.mark.parametrize('aid', ['none', 'cross', 'cross_halo', 'dot_ring'])
+def test_six_marker_dictionary_print_and_worker_agree(tmp_path, marker_id, aid, gray):
+    import inspect
+    from signa_core import make_dictionary
+    adict = make_dictionary(100)
+    assert adict.markerSize == 3 and adict.bytesList.shape[0] == 6
+    page = mp._render_page(cv2, cv2.aruco, adict, marker_id, 'a6', gray, aid, 100)
+    for turns in range(4):
+        import numpy as np
+        assert _detect_ids(np.rot90(page, turns).copy(), adict) == [marker_id]
+    path = tmp_path / 'marker.png'
+    cv2.imwrite(str(path), page)
+    spec = importlib.util.spec_from_file_location('worker_detector', os.path.join(HERE, '..', 'signa', 'gcp_detect.py'))
+    worker = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(worker)
+    namespace = {}
+    exec(inspect.getsource(worker.detect_gcps), namespace)
+    result = namespace['detect_gcps']([str(path)], '{} 1 2 3'.format(marker_id), 28191)
+    assert 'error' not in result, result
+    assert result['output']['gcp_list'].count('marker.png') == 1
+
+
+def _pdf_images(pdf):
+    import re
+    import numpy as np
+    for match in re.finditer(rb'/Subtype /Image /Width (\d+) /Height (\d+)[^\n]*\nstream\n', pdf):
+        end = pdf.index(b'\nendstream', match.end())
+        raw = zlib.decompress(pdf[match.end():end])
+        rgb = np.frombuffer(raw, np.uint8).reshape(int(match[2]), int(match[1]), 3)
+        yield cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+
+
+def test_a3_tiled_pdf_reassembles_without_scaling_or_missing_pixels():
+    import numpy as np
+    from signa_core import make_dictionary, markers
+    adict = make_dictionary(100)
+    expected = mp._render_page(cv2, cv2.aruco, adict, 5, 'a3', False, 'cross', 100)
+    pdf, error = mp.build_marker_pdf(100, 5, 5, page='a3', tile_a4=True)
+    assert error is None
+    assert b'/MediaBox [0 0 595.28 841.89]' in pdf
+    images = list(_pdf_images(pdf))
+    cols, rows = markers.tile_layout('a3')
+    assert len(images) == cols * rows == 4
+    margin = mp._px(markers.TILE_MARGIN_MM)
+    overlap = mp._px(markers.TILE_OVERLAP_MM)
+    cw, ch = mp._px(210) - 2 * margin, mp._px(297) - 2 * margin
+    assembled = np.zeros_like(expected)
+    for i, tile in enumerate(images):
+        x, y = (i % cols) * (cw - overlap), (i // cols) * (ch - overlap)
+        h, w = min(ch, expected.shape[0] - y), min(cw, expected.shape[1] - x)
+        assembled[y:y+h, x:x+w] = tile[margin:margin+h, margin:margin+w]
+    assert np.array_equal(assembled, expected)
+    assert _detect_ids(assembled, adict) == [5]
+
+
+@pytest.mark.parametrize('page,box', [('a1', b'1683.78 2383.94'), ('a0', b'2383.94 3370.39')])
+def test_large_format_pdf_dimensions_and_detection(page, box):
+    from signa_core import make_dictionary
+    pdf, error = mp.build_marker_pdf(100, 0, 0, page=page)
+    assert error is None
+    assert b'/MediaBox [0 0 ' + box + b']' in pdf
+    rendered = next(_pdf_images(pdf))
+    assert _detect_ids(rendered, make_dictionary(100)) == [0]

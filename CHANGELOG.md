@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Fixed six-marker 3×3 dictionary (dictionary 100, IDs 0–5), used by default in
+  the plugin, dashboard, CLI and core detector. Existing dictionary choices and
+  saved user preferences remain available.
+- A1/A0 marker PDFs and optional full-scale A4 tiling with crop marks, 5 mm
+  overlap, 10 mm printer margins and assembly labels.
+- Release archives bundle the local MIT core, including its license, so private
+  fork changes work without publishing signa-core to PyPI.
+
 ## [1.7.0] - 2026-06-25
 
 Georeferencing-accuracy QC: check points + an accuracy report.

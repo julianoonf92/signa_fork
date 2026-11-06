@@ -65,6 +65,8 @@
           <option value="a4" selected>A4 (210 × 297 mm)</option>
           <option value="a3">A3 (297 × 420 mm)</option>
           <option value="a2">A2 (420 × 594 mm)</option>
+          <option value="a1">A1 (594 × 841 mm)</option>
+          <option value="a0">A0 (841 × 1189 mm)</option>
         </select>
       </div>
       <div class="frow">
@@ -73,7 +75,7 @@
       </div>
       <div class="frow">
         <label>{% trans "Last marker id" %}</label>
-        <input type="number" name="id_to" value="11" min="0" step="1">
+        <input type="number" name="id_to" value="5" min="0" step="1">
       </div>
       <div class="frow">
         <label>{% trans "Center aiming aid" %}</label>
@@ -84,6 +86,10 @@
           <option value="dot_ring">{% trans "Red dot with white ring" %}</option>
         </select>
       </div>
+    </div>
+    <div class="frow">
+      <label class="cb"><input type="checkbox" name="tile_a4"> {% trans "Split onto A4 sheets" %}</label>
+      <p class="help">{% trans "Keeps the selected size. Print at 100%, trim at the crop marks, and overlap matching rows and columns by 5 mm. Includes 10 mm printer margins." %}</p>
     </div>
     <div class="frow">
       <label class="cb"><input type="checkbox" name="gray"> {% trans "Gray markers (less burn-in in strong sunlight)" %}</label>

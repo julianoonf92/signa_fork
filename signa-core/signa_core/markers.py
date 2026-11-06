@@ -49,6 +49,8 @@ PAGE_SIZES_MM = {
     'a4': (210, 297),
     'a3': (297, 420),
     'a2': (420, 594),
+    'a1': (594, 841),
+    'a0': (841, 1189),
 }
 
 # Center aiming aids (put a total station / laser disto target on the exact
@@ -66,6 +68,7 @@ DICT_CAPACITY = {
     12: 50, 13: 100, 14: 250, 15: 1000,     # 7x7
     16: 1024,                               # ARUCO_ORIGINAL
     17: 30, 18: 35, 19: 2320, 20: 587,      # AprilTag 16h5/25h9/36h10/36h11
+    100: 6,                                 # Signa six-marker 3x3
     99: 32,                                 # legacy custom 3x3
 }
 
@@ -74,7 +77,7 @@ MAX_MARKER_PAGES = 100
 
 # ASCII-safe dictionary names for the printed label (cv2.putText is
 # Hershey/ASCII only, so e.g. "custom 3×3" must become "custom 3x3").
-DICT_LABELS = {int(v): label.split('— ', 1)[-1].replace('×', 'x')
+DICT_LABELS = {int(v): label.split('— ', 1)[-1].replace('×', 'x').replace('–', '-')
                for v, label in DICT_CHOICES}
 
 
@@ -100,21 +103,24 @@ def render_marker_raster(adict, marker_id, side_px, white=255, aruco=None):
     return np.where(marker > 127, np.uint8(white), np.uint8(0))
 
 
-def draw_aiming_aid(cv2, page, cx, cy, aid, white):
+def draw_aiming_aid(cv2, page, cx, cy, aid, white, scale=1):
     """Overlay the center aiming aid on a BGR page at ``(cx, cy)`` in place."""
+    def px(mm):
+        return mm_to_px(mm * scale)
+
     bg = (int(white),) * 3
     if aid in ('cross', 'cross_halo'):
-        arm = mm_to_px(CROSS_SPAN_MM) // 2
+        arm = px(CROSS_SPAN_MM) // 2
         if aid == 'cross_halo':
-            halo = max(1, mm_to_px(HALO_WIDTH_MM))
+            halo = max(1, px(HALO_WIDTH_MM))
             cv2.line(page, (cx - arm, cy), (cx + arm, cy), bg, halo)
             cv2.line(page, (cx, cy - arm), (cx, cy + arm), bg, halo)
-        w = max(1, mm_to_px(CROSS_WIDTH_MM))
+        w = max(1, px(CROSS_WIDTH_MM))
         cv2.line(page, (cx - arm, cy), (cx + arm, cy), RED, w)
         cv2.line(page, (cx, cy - arm), (cx, cy + arm), RED, w)
     elif aid == 'dot_ring':
-        cv2.circle(page, (cx, cy), mm_to_px(RING_RADIUS_MM), bg, -1)
-        cv2.circle(page, (cx, cy), mm_to_px(DOT_RADIUS_MM), RED, -1)
+        cv2.circle(page, (cx, cy), px(RING_RADIUS_MM), bg, -1)
+        cv2.circle(page, (cx, cy), px(DOT_RADIUS_MM), RED, -1)
 
 
 def _draw_labels_pil(np, page, x, y, side, page_w, page_h, meta, big,
@@ -230,7 +236,10 @@ def compose_page(cv2, aruco, adict, marker_id, *, page_key, marker_side_px,
     canvas[y:y + side, x:x + side] = marker
     page = cv2.cvtColor(canvas, cv2.COLOR_GRAY2BGR)
 
-    draw_aiming_aid(cv2, page, x + side // 2, y + side // 2, aid, white)
+    # Small 3x3 cells must keep the ring out of the central sampling area
+    # used by Signa's ignore=0.33 detector profile.
+    draw_aiming_aid(cv2, page, x + side // 2, y + side // 2, aid, white,
+                    scale=0.4 if adict.markerSize == 3 else 1)
     return draw_labels(np, cv2, page, x, y, side, page_w, page_h, meta, big,
                        id_height_mm=id_height_mm, meta_mm=meta_mm)
 
@@ -363,3 +372,51 @@ def compress_page(cv2, page):
     """BGR page → ``(flate_rgb_bytes, width_px, height_px)`` for ``pages_to_pdf``."""
     rgb = cv2.cvtColor(page, cv2.COLOR_BGR2RGB)
     return zlib.compress(rgb.tobytes(), 6), page.shape[1], page.shape[0]
+
+
+# A4 poster tiles: printable area 190 x 277 mm, 5 mm shared image overlap.
+TILE_MARGIN_MM = 10
+TILE_OVERLAP_MM = 5
+
+
+def tile_layout(page_key):
+    """Columns and rows needed to reproduce a target sheet at its original scale."""
+    import math
+    w, h = PAGE_SIZES_MM[page_key]
+    aw, ah = PAGE_SIZES_MM['a4']
+    cw, ch = aw - 2 * TILE_MARGIN_MM, ah - 2 * TILE_MARGIN_MM
+    return (max(1, math.ceil((w - TILE_OVERLAP_MM) / (cw - TILE_OVERLAP_MM))),
+            max(1, math.ceil((h - TILE_OVERLAP_MM) / (ch - TILE_OVERLAP_MM))))
+
+
+def a4_tiles(cv2, page, page_key, marker_id):
+    """Yield A4 rasters without resizing the source; labels stay in printer margins.
+
+    Row/column order is top-to-bottom, left-to-right. Trim at the content box,
+    then align the duplicated 5 mm strips before taping on the back.
+    """
+    import numpy as np
+    cols, rows = tile_layout(page_key)
+    margin = mm_to_px(TILE_MARGIN_MM)
+    overlap = mm_to_px(TILE_OVERLAP_MM)
+    tw, th = (mm_to_px(v) for v in PAGE_SIZES_MM['a4'])
+    cw, ch = tw - 2 * margin, th - 2 * margin
+    for row in range(rows):
+        for col in range(cols):
+            tile = np.full((th, tw, 3), 255, dtype=np.uint8)
+            x, y = col * (cw - overlap), row * (ch - overlap)
+            crop = page[y:y + ch, x:x + cw]
+            h, w = crop.shape[:2]
+            tile[margin:margin + h, margin:margin + w] = crop
+            # Crop marks outside the image, never across marker modules.
+            for cx in (margin, margin + cw):
+                for cy in (margin, margin + ch):
+                    sx = -1 if cx == margin else 1
+                    sy = -1 if cy == margin else 1
+                    cv2.line(tile, (cx + sx * 8, cy), (cx + sx * 40, cy), (0, 0, 0), 2)
+                    cv2.line(tile, (cx, cy + sy * 8), (cx, cy + sy * 40), (0, 0, 0), 2)
+            label = 'ID {} | {} | row {}/{} col {}/{} | 100% | overlap 5 mm'.format(
+                marker_id, page_key.upper(), row + 1, rows, col + 1, cols)
+            cv2.putText(tile, label, (margin, margin // 2),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+            yield tile

@@ -1,10 +1,10 @@
 import os
 import sys
 
-# WebODM installs this plugin's requirements (signa-core, OpenCV) into a
+# WebODM installs this plugin's OpenCV requirement into a
 # per-plugin site-packages (see PluginBase.check_requirements) but only adds it
-# to sys.path inside the python_imports() context manager. We add it eagerly so
-# the lazily-imported signa_core resolves in the webapp/worker once installed.
+# to sys.path inside the python_imports() context manager. We add it eagerly
+# for OpenCV; release ZIPs also carry the local core under vendor/.
 #
 # The plugin module imports cleanly WITHOUT signa_core (all signa_core imports
 # are lazy, inside the views/worker/forms), so WebODM can instantiate the plugin
@@ -24,5 +24,8 @@ def _add_site_packages():
 
 
 _add_site_packages()
+_bundled_core = os.path.join(os.path.dirname(__file__), "vendor")
+if os.path.isdir(_bundled_core):
+    sys.path.insert(0, _bundled_core)
 
 from .plugin import *  # noqa: E402,F401,F403

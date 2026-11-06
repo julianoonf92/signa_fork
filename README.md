@@ -108,7 +108,7 @@ in one run): see [Single-pass](#single-pass-detect-before-processing) below.
 | Field | Maps to (OpenCV/Signa) | Default | Notes |
 |-------|------------------------|---------|-------|
 | EPSG | `--epsg` | `28191` | target CRS of the coordinates; written as the `gcp_list.txt` header |
-| ArUco dictionary | dictionary id | `1` (DICT_4X4_100) | `99` = legacy custom 3×3 |
+| ArUco dictionary | dictionary id | `100` (Signa six-marker 3×3) | IDs 0–5; existing OpenCV dictionaries and legacy `99` remain available |
 | minrate | `--minrate` → `minMarkerPerimeterRate` | `0.01` | lower to detect smaller markers (enforced floor `0.005`) |
 | ignore | `--ignore` → `perspectiveRemoveIgnoredMarginPerCell` | `0.33` | burnt-in protection for strong sunlight |
 | Color adjustment | grayscale equalization | on | conservative contrast enhancement before detection |
@@ -120,9 +120,9 @@ The **Signa Settings** page can generate print-ready ArUco marker PDFs
 to match the dictionary the detector expects:
 
 - **Dictionary** — pre-selected from your saved default; all supported
-  dictionaries (0–20, 99) work. The id range is capacity-checked per
+  dictionaries (0–20, 99, 100) work. The id range is capacity-checked per
   dictionary (max 100 pages per PDF).
-- **Page size** — DIN A6–A2. The marker is sized to the page with a one-module
+- **Page size** — DIN A6–A0. The marker is sized to the page with a one-module
   white quiet zone (e.g. ~157 mm on A4 for a 4×4 dictionary). Rule of thumb:
   marker side ≥ 40 × GSD of the planned flight.
 - **Gray variant** — prints gray instead of white module cells; less burn-in
@@ -140,6 +140,36 @@ standing height with the sheet on the ground. Every page is verified with the
 ArUco detector before it is embedded in the PDF (self-check) — an undetectable
 sheet can never be produced. Print at **100% scale** (no fit-to-page), check
 the printed size with a ruler, and laminate **matte**, not glossy.
+
+### Six-marker dictionary and A4 poster printing
+
+The default dictionary is **100 — Signa 3×3 (6 markers, IDs 0–5)**. Its six
+patterns are fixed in the code, with a 3×3 data grid and a one-cell black border.
+This reduces the number of cells compared with the standard 4×4 dictionaries.
+The minimum Hamming distance across marker rotations is three bits. Simpler
+patterns do not guarantee better detection in every field condition; print a
+sample and check it at your intended flight height.
+
+These are new patterns: an old marker labelled “0” is not the same as marker
+“0” in dictionary 100. Keep the original dictionary selected when using existing
+sheets. Previously saved per-user dictionary preferences are preserved; select
+100 in Signa Settings and save if you already have a saved preference.
+The PDF form initially offers IDs 0–5. All six can be used as control/check points.
+The release ZIP includes this fork's core code, so no private PyPI release is needed.
+
+Select **A1** or **A0** for a full-size large-format PDF. To print any target size
+on an ordinary printer, select the target size (for example **A3**) and check
+**Split onto A4 sheets**. The marker retains exactly the same dimensions as the
+untiled PDF; it is not shrunk to fit an A4 sheet.
+
+Print **Actual size / 100%**, single-sided. Trim the 10 mm margins at the crop
+marks, arrange sheets by their marker ID, row and column labels, and align the
+repeated 5 mm image strips before taping the backs. Keep the white quiet zone
+around the assembled marker. Printer margins and overlap mean a full A3 sheet
+uses **four A4 sheets**, rather than two borderless sheets. A1 uses 16 and A0
+uses 25 A4 sheets per marker. Tiled downloads are limited to 200 A4 pages;
+reduce the ID range for larger batches. Check the assembled dimensions with a
+ruler and keep the paper flat.
 
 #### Declare the coordinate CRS in the file (recommended)
 
