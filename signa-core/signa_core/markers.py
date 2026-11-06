@@ -236,10 +236,12 @@ def compose_page(cv2, aruco, adict, marker_id, *, page_key, marker_side_px,
     canvas[y:y + side, x:x + side] = marker
     page = cv2.cvtColor(canvas, cv2.COLOR_GRAY2BGR)
 
-    # Scale the aid to the available cell size on small 3x3 prints. Larger
-    # sheets use the normal 10 mm cross / 4 mm ring radius. The cell-relative
-    # limit keeps the ring detectable with Signa's ignore=0.33 profile.
-    aid_scale = min(1, side / ((int(adict.markerSize) + 2) * mm_to_px(40))) if adict.markerSize == 3 else 1
+    # Keep small 3x3 sheets detectable. For the six-marker dictionary, scale
+    # the aid with page width above A2 instead of capping it at 10 mm forever.
+    aid_scale = 1
+    if adict.markerSize == 3:
+        page_scale = max(1, page_w_mm / 420) if marker_capacity(adict) == 6 else 1
+        aid_scale = min(page_scale, side / ((int(adict.markerSize) + 2) * mm_to_px(40)))
     draw_aiming_aid(cv2, page, x + side // 2, y + side // 2, aid, white,
                     scale=aid_scale)
     return draw_labels(np, cv2, page, x, y, side, page_w, page_h, meta, big,

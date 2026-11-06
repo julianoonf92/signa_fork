@@ -211,3 +211,22 @@ def test_large_six_marker_aid_is_full_size_and_detectable(marker_id, aid, monkey
     params.perspectiveRemoveIgnoredMarginPerCell = 0.33
     _, ids, _ = cv2.aruco.ArucoDetector(dictionary, params).detectMarkers(rendered)
     assert ids is not None and ids.flatten().tolist() == [marker_id]
+
+
+@pytest.mark.parametrize('page', ['a2', 'a1', 'a0'])
+@pytest.mark.parametrize('aid', ['cross', 'cross_halo', 'dot_ring'])
+def test_six_marker_large_aids_scale_with_page_width(page, aid):
+    import numpy as np
+    from signa_core import make_dictionary, markers
+    dictionary = make_dictionary(100)
+    rendered = mp._render_page(cv2, cv2.aruco, dictionary, 0, page, False, aid, 100)
+    red = (rendered[:, :, 2] > 150) & (rendered[:, :, 1] < 100)
+    ys, xs = np.where(red)
+    # Account for stroke/raster rounding; all aid dimensions scale together.
+    scale = markers.PAGE_SIZES_MM[page][0] / 420
+    base_mm = 11 if aid in ('cross', 'cross_halo') else 3
+    assert abs((xs.max() - xs.min() + 1) / mp.DPI * 25.4 - base_mm * scale) < 0.3
+    params = cv2.aruco.DetectorParameters()
+    params.perspectiveRemoveIgnoredMarginPerCell = 0.33
+    _, ids, _ = cv2.aruco.ArucoDetector(dictionary, params).detectMarkers(rendered)
+    assert ids is not None and ids.flatten().tolist() == [0]

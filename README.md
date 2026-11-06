@@ -156,8 +156,8 @@ sheets. Previously saved per-user dictionary preferences are preserved; select
 100 in Signa Settings and save if you already have a saved preference.
 The six-marker dictionary fills the same page fraction as a 7×7 marker (about
 344 mm square on A2), with white side margins of about 38 mm. Its red aiming
-aid uses the normal size on large sheets and scales down only on smaller sheets
-to preserve detection. Other dictionaries retain their existing sizing.
+aid uses A2 as the reference size, grows proportionally on A1 and A0, and
+scales down on smaller sheets to preserve detection. Other dictionaries retain their existing sizing.
 The PDF form initially offers IDs 0–5. All six can be used as control/check points.
 The release ZIP includes this fork's core code, so no private PyPI release is needed.
 

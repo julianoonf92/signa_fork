@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Scale six-marker aiming aids proportionally above A2: the cross span is
+  10 mm on A2, about 14.1 mm on A1 and 20 mm on A0.
 - Enlarge the six-marker 3×3 square to the 7×7 page fraction (about 344 mm on
   A2 instead of 300 mm). Scale its aiming aid by cell size, restoring the normal
   aid dimensions on larger sheets while preserving detection on small sheets.
