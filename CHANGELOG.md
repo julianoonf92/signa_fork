@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Enlarge the six-marker 3×3 square to the 7×7 page fraction (about 344 mm on
+  A2 instead of 300 mm). Scale its aiming aid by cell size, restoring the normal
+  aid dimensions on larger sheets while preserving detection on small sheets.
+
 ### Added
 - Fixed six-marker 3×3 dictionary (dictionary 100, IDs 0–5), used by default in
   the plugin, dashboard, CLI and core detector. Existing dictionary choices and

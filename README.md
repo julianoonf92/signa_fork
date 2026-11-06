@@ -122,7 +122,7 @@ to match the dictionary the detector expects:
 - **Dictionary** — pre-selected from your saved default; all supported
   dictionaries (0–20, 99, 100) work. The id range is capacity-checked per
   dictionary (max 100 pages per PDF).
-- **Page size** — DIN A6–A0. The marker is sized to the page with a one-module
+- **Page size** — DIN A6–A0. The marker is sized to the page with a
   white quiet zone (e.g. ~157 mm on A4 for a 4×4 dictionary). Rule of thumb:
   marker side ≥ 40 × GSD of the planned flight.
 - **Gray variant** — prints gray instead of white module cells; less burn-in
@@ -154,6 +154,10 @@ These are new patterns: an old marker labelled “0” is not the same as marker
 “0” in dictionary 100. Keep the original dictionary selected when using existing
 sheets. Previously saved per-user dictionary preferences are preserved; select
 100 in Signa Settings and save if you already have a saved preference.
+The six-marker dictionary fills the same page fraction as a 7×7 marker (about
+344 mm square on A2), with white side margins of about 38 mm. Its red aiming
+aid uses the normal size on large sheets and scales down only on smaller sheets
+to preserve detection. Other dictionaries retain their existing sizing.
 The PDF form initially offers IDs 0–5. All six can be used as control/check points.
 The release ZIP includes this fork's core code, so no private PyPI release is needed.
 

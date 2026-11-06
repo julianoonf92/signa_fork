@@ -1,7 +1,7 @@
 """Print-ready ArUco marker sheets as a PDF download (Signa).
 
 Thin layout layer over :mod:`signa_core.markers`: one DIN-A page per marker id,
-the marker sized to **fill the page** (keeping a one-module quiet zone) — the
+the marker sized to **fill the page** (keeping a white quiet zone) — the
 printed size is a *result*, shown in the meta line. The generic machinery
 (marker raster, aiming aid, labels, self-check, PDF writer) lives in signa-core;
 only the fit-to-page sizing is Signa-specific. (Mensura uses the same primitives
@@ -60,10 +60,18 @@ def _px(mm):
 
 
 def _fit_page_side(adict, page_w):
-    """Largest marker side (px) that keeps a one-module quiet zone in the page,
-    rounded down to whole pixels per module for crisp edges."""
+    """Fit the marker, keeping crisp whole-pixel modules.
+
+    The six-marker 3x3 dictionary uses the same page fraction as a 7x7
+    dictionary: 9/11 (about 344 mm on A2). Its white side margins remain
+    1/11 of the page each, rather than consuming an entire large 3x3 cell.
+    Other dictionaries retain their one-module quiet zone.
+    """
     modules = int(adict.markerSize) + 2  # bits + black border
-    side = page_w * modules // (modules + 2 * _m.QUIET_MODULES)
+    layout_modules = 9 if adict.markerSize == 3 and _m.marker_capacity(adict) == 6 else modules
+    side = page_w * layout_modules // (layout_modules + 2 * _m.QUIET_MODULES)
+    if layout_modules != modules:
+        return ((side + modules // 2) // modules) * modules
     return side - side % modules
 
 

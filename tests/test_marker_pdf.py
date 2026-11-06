@@ -179,3 +179,35 @@ def test_large_format_pdf_dimensions_and_detection(page, box):
     assert b'/MediaBox [0 0 ' + box + b']' in pdf
     rendered = next(_pdf_images(pdf))
     assert _detect_ids(rendered, make_dictionary(100)) == [0]
+
+
+def test_six_marker_a2_size_matches_7x7():
+    from signa_core import make_dictionary
+    width = mp._px(420)
+    custom = mp._fit_page_side(make_dictionary(100), width)
+    reference = mp._fit_page_side(make_dictionary(15), width)
+    assert abs(custom - reference) < 9  # whole-module pixel rounding
+    assert round(custom / mp.DPI * 25.4) == 344
+    assert custom % 5 == 0
+    # The legacy 3x3 dictionary keeps its previous geometry.
+    legacy = mp._fit_page_side(make_dictionary(99), width)
+    assert round(legacy / mp.DPI * 25.4) == 300
+
+
+@pytest.mark.parametrize('marker_id', range(6))
+@pytest.mark.parametrize('aid', ['cross', 'cross_halo', 'dot_ring'])
+def test_large_six_marker_aid_is_full_size_and_detectable(marker_id, aid, monkeypatch):
+    from signa_core import make_dictionary, markers
+    scales = []
+    draw = markers.draw_aiming_aid
+    def capture(*args, **kwargs):
+        scales.append(kwargs.get('scale', 1))
+        return draw(*args, **kwargs)
+    monkeypatch.setattr(markers, 'draw_aiming_aid', capture)
+    dictionary = make_dictionary(100)
+    rendered = mp._render_page(cv2, cv2.aruco, dictionary, marker_id, 'a2', False, aid, 100)
+    assert scales == [1]
+    params = cv2.aruco.DetectorParameters()
+    params.perspectiveRemoveIgnoredMarginPerCell = 0.33
+    _, ids, _ = cv2.aruco.ArucoDetector(dictionary, params).detectMarkers(rendered)
+    assert ids is not None and ids.flatten().tolist() == [marker_id]
